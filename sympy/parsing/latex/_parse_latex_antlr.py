@@ -230,11 +230,25 @@ def convert_postfix(postfix):
         exp_nested = postfix.exp_nofunc()
 
     exp = convert_exp(exp_nested)
-    for op in postfix.postfix_op():
+    ops = postfix.postfix_op()
+    i = 0
+    while i < len(ops):
+        op = ops[i]
+        i += 1
         if op.BANG():
             if isinstance(exp, list):
                 raise LaTeXParsingError("Cannot apply postfix to derivative")
-            exp = sympy.factorial(exp, evaluate=False)
+            count = 1
+            while (i < len(ops) and ops[i].BANG()
+                   and not ops[i].start.getInputStream().getText(
+                       ops[i - 1].stop.stop + 1, ops[i].start.start - 1).strip()):
+                count += 1
+                i += 1
+            if count == 2:
+                exp = sympy.factorial2(exp, evaluate=False)
+            else:
+                for _ in range(count):
+                    exp = sympy.factorial(exp, evaluate=False)
         elif op.eval_at():
             ev = op.eval_at()
             at_b = None
